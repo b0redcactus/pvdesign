@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8" />
-<title>Pixel bögre kávé töltő időzítő</title>
+<title>Pixel art csésze kávé töltő időzítő</title>
 <style>
   body {
     background: #f0f0f0;
@@ -14,39 +14,28 @@
     grid-template-columns: repeat(8, 20px);
     grid-template-rows: repeat(10, 20px);
     gap: 2px;
-    background: #fff;
-    border: 4px solid #6b4c1a;
-    border-radius: 12px 12px 20px 20px;
     position: relative;
     width: max-content;
-    box-shadow: inset 0 0 10px #a67c3c;
   }
-  /* Bögre fogantyú pixeljei */
-  .handle {
-    position: absolute;
-    top: 40px;
-    right: -44px;
-    width: 40px;
-    height: 80px;
-    background: #6b4c1a;
-    border-radius: 50% / 60%;
-    box-shadow: inset 0 0 8px #a67c3c;
-  }
-  /* Egy pixel blokk */
+  /* Pixelek alapértelmezett színe */
   .pixel {
     width: 20px;
     height: 20px;
     background: transparent;
     box-sizing: border-box;
   }
+  /* Csésze körvonal pixelei */
+  .cup-outline {
+    background: #6b4c1a; /* sötétbarna */
+  }
   /* Kávé pixelek */
   .coffee-pixel {
-    background: #6b4c1a;
+    background: #4b3211; /* kávébarna */
     transition: background 0.5s ease;
   }
-  /* Alsó sorok lekerekítése pixelesen */
-  .bottom-rounded {
-    border-radius: 0 0 6px 6px;
+  /* Csésze fogantyú pixelei */
+  .handle {
+    background: #6b4c1a;
   }
   /* Időzítő szöveg */
   .timer-text {
@@ -61,8 +50,7 @@
 
 <div>
   <div class="pixel-cup" id="cup">
-    <!-- 8x10 pixel rács -->
-    <!-- Az alábbi pixelek lesznek feltöltve kávéval alulról felfelé -->
+    <!-- 8x10 pixeles csésze -->
   </div>
   <div class="timer-text" id="timerText">30:00</div>
 </div>
@@ -70,41 +58,67 @@
 <script>
   const cup = document.getElementById('cup');
   const timerText = document.getElementById('timerText');
-  const rows = 10;
+
+  // 8 oszlop, 10 sor
   const cols = 8;
-  const totalPixels = rows * cols;
+  const rows = 10;
+
+  // Csésze pixel térképe (2D tömb), ahol:
+  // 0 = átlátszó (nincs pixel)
+  // 1 = csésze körvonal pixel
+  // 2 = fogantyú pixel
+  // 3 = kávé tölthető pixel (belső rész)
+  // Ez a minta pixeles csésze formát ad, fogantyúval jobb oldalon
+  const cupMap = [
+    [0,0,1,1,1,1,0,0],  // felső sor (csésze perem)
+    [0,1,3,3,3,3,1,0],
+    [1,3,3,3,3,3,3,1],
+    [1,3,3,3,3,3,3,1],
+    [1,3,3,3,3,3,3,1],
+    [1,3,3,3,3,3,3,1],
+    [1,3,3,3,3,3,3,1],
+    [0,1,3,3,3,3,1,0],
+    [0,0,1,1,1,1,0,0],
+    [0,0,0,2,2,0,0,0],  // fogantyú pixelek alul
+  ];
+
+  // Létrehozzuk a pixeleket a térkép alapján
+  const pixels = [];
+  for(let r=0; r<rows; r++) {
+    for(let c=0; c<cols; c++) {
+      const pixel = document.createElement('div');
+      pixel.classList.add('pixel');
+      const val = cupMap[r][c];
+      if(val === 1) pixel.classList.add('cup-outline');
+      else if(val === 2) pixel.classList.add('handle');
+      else if(val === 3) pixel.dataset.coffee = 'true'; // tölthető kávé pixel
+      cup.appendChild(pixel);
+      pixels.push(pixel);
+    }
+  }
+
+  // Kávé tölthető pixelek indexei (csak a belső részek)
+  const coffeePixels = pixels.filter(p => p.dataset.coffee === 'true');
+
   const totalSeconds = 30 * 60; // 30 perc
   let elapsedSeconds = 0;
 
-  // Létrehozzuk a pixeleket (div-eket)
-  for (let i = 0; i < totalPixels; i++) {
-    const pixel = document.createElement('div');
-    pixel.classList.add('pixel');
-    // Alsó sor pixeleit lekerekítjük pixelesen
-    if (i >= totalPixels - cols) {
-      pixel.classList.add('bottom-rounded');
-    }
-    cup.appendChild(pixel);
-  }
-
-  const pixels = cup.querySelectorAll('.pixel');
-
   function updateTimer() {
     elapsedSeconds++;
-    if (elapsedSeconds > totalSeconds) {
+    if(elapsedSeconds > totalSeconds) {
       clearInterval(timerInterval);
       return;
     }
-    // Számoljuk, hány pixel töltsön be kávét az eltelt idő alapján
-    const pixelsToFill = Math.floor((elapsedSeconds / totalSeconds) * totalPixels);
+    // Hány kávé pixel töltődjön fel az eltelt idő alapján
+    const pixelsToFill = Math.floor((elapsedSeconds / totalSeconds) * coffeePixels.length);
 
     // Először töröljük a korábbi kávé pixeleket
-    pixels.forEach(p => p.classList.remove('coffee-pixel'));
+    coffeePixels.forEach(p => p.classList.remove('coffee-pixel'));
 
     // Feltöltjük alulról felfelé a pixeleket kávéval
-    for (let i = 0; i < pixelsToFill; i++) {
-      // A pixelek alulról felfelé töltődnek, ezért indexelünk visszafelé
-      pixels[totalPixels - 1 - i].classList.add('coffee-pixel');
+    for(let i=0; i<pixelsToFill; i++) {
+      // Alulról felfelé töltjük, ezért fordított index
+      coffeePixels[coffeePixels.length - 1 - i].classList.add('coffee-pixel');
     }
 
     // Frissítjük az időzítő szöveget
@@ -116,8 +130,6 @@
 
   const timerInterval = setInterval(updateTimer, 1000);
 </script>
-
-<div class="handle"></div>
 
 </body>
 </html>
