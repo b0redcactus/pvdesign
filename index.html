@@ -1,22 +1,23 @@
-
 <!DOCTYPE html>
 <html lang="hu">
 <head>
 <meta charset="UTF-8" />
-<title>Kávé töltő időzítő</title>
+<title>work timer</title>
 <style>
   body {
     display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f0f0;
-    font-family: sans-serif;
+    font-family: Montserrat, Roboto, sans-serif;
   }
   .cup {
     position: relative;
-    width: 100px;
-    height: 150px;
-    border: 4px solid #6b4c1a;
-    border-radius: 0 0 40px 40px;
+    width: 140px;
+    height: 120px;
     background: #fff;
+    border: 4px solid #6b4c1a;
+    border-radius: 70px 70px 40px 40px / 100px 100px 40px 40px; /* csésze felső rész széles, lekerekített */
+    box-sizing: border-box;
     overflow: hidden;
+    box-shadow: inset 0 0 10px #a67c3c;
   }
   .coffee {
     position: absolute;
@@ -28,18 +29,20 @@
   }
   .handle {
     position: absolute;
-    top: 30px;
-    right: -30px;
-    width: 30px;
+    top: 25px;
+    right: -40px;
+    width: 40px;
     height: 70px;
     border: 4px solid #6b4c1a;
-    border-radius: 40px;
+    border-radius: 50% / 60%;
     background: #fff;
+    box-sizing: border-box;
   }
   .timer-text {
     margin-top: 20px;
     font-size: 18px;
     text-align: center;
+    color: #4a3b1a;
   }
 </style>
 </head>
@@ -65,11 +68,9 @@
       clearInterval(timerInterval);
       return;
     }
-    // Frissítjük a kávé magasságát százalékban
     const percent = (elapsedSeconds / totalSeconds) * 100;
     coffee.style.height = percent + '%';
 
-    // Frissítjük a visszaszámlálót (perc:mp)
     const remaining = totalSeconds - elapsedSeconds;
     const min = Math.floor(remaining / 60);
     const sec = remaining % 60;
