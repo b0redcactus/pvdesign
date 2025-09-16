@@ -39,7 +39,7 @@
 <body>
   <header>
     <h1>Kábelárok kalkulátor – MSZ 13207:2020</h1>
-    <small>Másold be a kábeleket, válaszd ki a fektetést, és megkapod a szabvány szerinti minimális méreteket.</small>
+    <small>Adj meg kábeleket/csoportokat, válassz elrendezést; a kalkulátor a szabvány szerinti min. geometriai méreteket adja.</small>
   </header>
 
   <main>
@@ -50,22 +50,22 @@
         <div>
           <label>Terület típusa
             <select id="terrain">
-              <option value="regulated">Szabályozott terep – tipikusan 0,6…0,8 m fektetési mélység</option>
-              <option value="unregulated">Szabályozatlan terep – min. 1,0 m fektetési mélység</option>
+              <option value="regulated">Szabályozott terep – jellemzően 0,6…0,8 m</option>
+              <option value="unregulated">Szabályozatlan terep – min. 1,0 m</option>
             </select>
           </label>
         </div>
         <div>
-          <label>Választott fektetési mélység (m)
+          <label>Választott fektetési mélység (m) – kábel teteje
             <input id="depth" type="number" step="0.1" min="0.3" value="0.7">
           </label>
-          <div class="inline-help">Ajánlott kiindulás: 0,7 m (szabályozott terepen).</div>
+          <div class="inline-help">A tereptípus szerinti minimum felülírja az itt megadott értéket, ha kisebb lenne.</div>
         </div>
         <div>
           <label>Elrendezés a kábelárokban
             <select id="layout">
-              <option value="single">Egy síkban (sorba rendezve)</option>
-              <option value="trefoil">Három egyerű kábel érintő háromszögben (trefoil)</option>
+              <option value="single">Egy síkban (sorba)</option>
+              <option value="trefoil">Trefoil (három egyerű érintő háromszögben)</option>
               <option value="multirow">Több réteg (egymás felett)</option>
             </select>
           </label>
@@ -82,18 +82,18 @@
           <label>Kábelek közötti távolság (m)
             <input id="spacing" type="number" step="0.01" value="0.07" min="0.05">
           </label>
-          <div class="inline-help">Alap: 0,07 m (védőcsövek közt min. 0,05 m).</div>
+          <div class="inline-help">Alapértelmezés: 0,07 m (védőcsövek közt min. 0,05 m).</div>
         </div>
         <div>
           <label>Ágyazóréteg alul/felül (m)
             <input id="bedding" type="number" step="0.01" value="0.05" min="0.00">
           </label>
-          <div class="inline-help">I–II. talajban nem feltétlen kötelező; máskor jellemzően min. 0,05 m.</div>
+          <div class="inline-help">I–II. talajosztályban nem mindig kötelező; egyébként jellemzően min. 0,05 m.</div>
         </div>
       </div>
     </section>
 
-    <!-- 2) KÁBEL LISTA -->
+    <!-- 2) KÁBELEK / CSOPORTOK -->
     <section class="card">
       <h2>2) Kábelek / csoportok felvétele</h2>
       <div class="row">
@@ -133,9 +133,9 @@
       </table>
 
       <div class="flex">
-        <span class="chip">Min. árokszélesség: <span class="pill">400 mm</span></span>
-        <span class="chip">Min. kábel-köz: <span class="pill">70 mm</span> (<span class="pill">50 mm</span> védőcsövek közt)</span>
-        <span class="chip">Oldaltávolság: <span class="pill">100 mm</span> / oldal</span>
+        <span class="chip">Min. árokszélesség: <span class="pill">0,40 m</span></span>
+        <span class="chip">Min. kábel-köz: <span class="pill">0,07 m</span> (<span class="pill">0,05 m</span> csövek közt)</span>
+        <span class="chip">Oldaltávolság: <span class="pill">0,10 m</span> / oldal</span>
       </div>
     </section>
 
@@ -148,13 +148,11 @@
       </div>
       <div class="grid">
         <div><span class="pill">Jelzőszalag: min. 0,3 m-rel a legfelső kábel felett</span> <span id="tapeLevel" class="muted"></span></div>
-        <div class="inline-help">A rajz keresztmetszet: <strong>felül</strong> a felszín, <strong>alul</strong> a kábelek az ágyazóban.</div>
+        <div class="inline-help">A rajz keresztmetszet: <strong>felül</strong> a felszín, <strong>alul</strong> a kábelek és az ágyazó.</div>
       </div>
 
       <div class="svg-wrap" style="margin-top:10px">
-        <svg id="schematic" width="100%" height="380" viewBox="0 0 840 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kábelárok sematikus rajz">
-          <!-- Dinamikus rajz -->
-        </svg>
+        <svg id="schematic" width="100%" height="380" viewBox="0 0 840 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kábelárok sematikus rajz"></svg>
       </div>
 
       <div class="row" style="margin-top:10px">
@@ -169,7 +167,7 @@
     </section>
   </main>
 
-  <footer class="muted">Készült a SolServices részére • DXF-exporttal</footer>
+  <footer class="muted">Készült a SolServices részére • TXT + DXF export</footer>
 
   <script>
     const $ = (sel) => document.querySelector(sel);
@@ -213,7 +211,7 @@
         tr.innerHTML = `
           <td>${idx+1}</td>
           <td>${it.kind==="trefoilGroup"?"Trefoil-csoport":"Kábel"}</td>
-          <td>${it.diam} mm</td>
+          <td>${it.diam}</td>
           <td>${it.count}</td>
           <td>${it.inDuct ? "Igen" : "Nem"}</td>
           <td>${it.note||""}</td>
@@ -231,7 +229,7 @@
       })
     }
 
-    // Felvétel: trefoil esetén a darabszám csoportszám (1 katt = 1 csoport)
+    // Felvétel: trefoil = csoportok, egy kattintás = 1 csoport
     function addCable(){
       const diam = mm($("#diameter").value);
       const count = Math.max(1, Math.floor(safeParse($("#count").value,1)));
@@ -250,31 +248,32 @@
     }
     $("#addCable").addEventListener("click", addCable);
 
+    // Fő számítás
     function compute(){
-      const side = Math.max(0.10, safeParse(sideClear.value, 0.10));           // m
-      const baseSpacing = Math.max(0.05, safeParse(spacing.value, 0.07));      // m
-      const bed = Math.max(0, safeParse(bedding.value, 0.05));                 // m
-      const depthSel = Math.max(0.3, safeParse(depthInput.value, 0.7));        // m
+      const side = Math.max(0.10, safeParse(sideClear.value, 0.10));         // m
+      const baseSpacing = Math.max(0.05, safeParse(spacing.value, 0.07));    // m
+      const bed = Math.max(0, safeParse(bedding.value, 0.05));               // m
+      const depthSel = Math.max(0.3, safeParse(depthInput.value, 0.7));      // m
       const layout = layoutSel.value;
 
       const terr = terrain.value;
       const minDepth = terr === "regulated" ? 0.6 : 1.0;
-      const usedDepth = Math.max(depthSel, minDepth);                           // kábel teteje a terepszint alatt
+      const usedDepth = Math.max(depthSel, minDepth);                         // kábel teteje a terepszint alatt
 
       // elemek / csoportok listája
       let rows = [];
 
       if(layout==="trefoil"){
-        // Közvetlenül csoportokból számolunk: minden tétel count darab 3-as csoport ugyanazzal d-vel
+        // Trefoil: a táblázat elemei csoportként értendők (count = hány csoport)
         let groups = [];
         state.items.forEach(it=>{
-          const effDmm = it.inDuct ? (it.diam + 10) : it.diam;
+          const effDmm = it.inDuct ? (it.diam + 10) : it.diam;                // cső becslés: +10 mm
           for(let g=0; g<it.count; g++) groups.push({d_m: toMeters(effDmm)});
         });
         const width = groups.length ? groups.reduce((s,g)=>s + 2*g.d_m, 0) + (groups.length-1)*baseSpacing : 0;
         rows = [{type:"trefoil", width_m: width, groups}];
       } else if(layout==="multirow"){
-        // Expandálás kábelekre
+        // Kétsoros egyszerűsítés (kiegyenlítés): felezés
         let elements = [];
         state.items.forEach(it=>{
           const effDmm = it.inDuct ? (it.diam + 10) : it.diam;
@@ -291,7 +290,7 @@
           {type:"line", width_m:wB, items: rowB}
         ];
       } else {
-        // single
+        // Egy sor
         let elements = [];
         state.items.forEach(it=>{
           const effDmm = it.inDuct ? (it.diam + 10) : it.diam;
@@ -301,13 +300,16 @@
         rows = [{type:"line", width_m: w, items: elements}];
       }
 
+      // szélesség
       const innerWidth = rows.reduce((m,r)=>Math.max(m, r.width_m), 0);
       const trenchWidth = Math.max(0.4, innerWidth + 2*side);
 
-      const topOfCable = usedDepth;               // kábel teteje
-      const trenchDepth = topOfCable + bed;       // becsült teljes árok
+      // mélység (becslés): kábel teteje (usedDepth) + felső ágyazóréteg
+      const topOfCable = usedDepth;
+      const trenchDepth = topOfCable + bed;
       const tape = topOfCable + 0.30;
 
+      // kiírás
       widthOut.textContent = `${round(trenchWidth, 3)} m (min)`;
       depthOut.textContent = `${round(trenchDepth, 3)} m (becsült árok-mélység)`;
       tapeLevel.textContent = `– javasolt elhelyezési szint: ${round(tape,2)} m a terepszint alatt`;
@@ -320,43 +322,46 @@
         depthOut.className = "pill ok";
       }
 
-      drawSVG({rows, trenchWidth, trenchDepth, side, baseSpacing, bed, usedDepth, topOfCable});
-      state._geom = {rows, trenchWidth, trenchDepth, side, baseSpacing, bed, usedDepth, topOfCable};
+      // rajz + export geometriák
+      drawSVG({rows, trenchWidth, trenchDepth, side, baseSpacing, bed, topOfCable});
+      state._geom = {rows, trenchWidth, trenchDepth, side, baseSpacing, bed, topOfCable};
     }
 
-    // ===== SVG RAJZ =====
+    // ===== SVG RAJZ – IZOTRÓP SKÁLA =====
     function drawSVG(g){
-      const svg = document.getElementById("schematic");
-      const Wpx = 840, Hpx = 380;
+      const Wpx = 840, Hpx = 380, margin = 50;
       svg.setAttribute("viewBox", `0 0 ${Wpx} ${Hpx}`);
       while(svg.firstChild) svg.removeChild(svg.firstChild);
 
-      const margin = 50;
-      const pxPerM_X = (Wpx - 2*margin) / Math.max(0.8, g.trenchWidth);
-      const pxPerM_Y = (Hpx - 2*margin) / Math.max(0.8, g.trenchDepth);
+      // azonos skála x/y-ra → trefoil nem torzul
+      const pxPerM = Math.min(
+        (Wpx - 2*margin) / Math.max(0.8, g.trenchWidth),
+        (Hpx - 2*margin) / Math.max(0.8, g.trenchDepth)
+      );
+      const trenchWpx = g.trenchWidth * pxPerM;
+      const trenchHpx = g.trenchDepth * pxPerM;
 
-      // Felszín felül
-      const ox = (Wpx - g.trenchWidth * pxPerM_X)/2;
-      const topY = margin;
-      const trenchHpx = g.trenchDepth * pxPerM_Y;
-      const trenchWpx = g.trenchWidth * pxPerM_X;
+      const ox = (Wpx - trenchWpx)/2;   // bal
+      const topY = margin;              // felszín
 
-      // Árok téglalap
+      // Árok
       svg.appendChild(rectEl(ox, topY, trenchWpx, trenchHpx, "#334a7a", "#99b3ff12"));
       const tSurf = textEl(ox + trenchWpx/2, topY - 8, "FELSZÍN"); tSurf.setAttribute("text-anchor","middle"); svg.appendChild(tSurf);
 
-      // Ágyazóréteg vonal
+      // Ágyazóréteg vonal (fenéktől felfelé bed)
       if(g.bed>0){
-        const yBed = topY + trenchHpx - g.bed*pxPerM_Y;
+        const yBed = topY + trenchHpx - g.bed*pxPerM;
         svg.appendChild(lineEl(ox, yBed, ox+trenchWpx, yBed, "#5fa8ff99", 2));
         const t = textEl(ox + trenchWpx - 6, yBed - 4, `Ágyazóréteg (${g.bed.toFixed(2)} m)`); t.setAttribute("text-anchor","end"); svg.appendChild(t);
       }
 
-      // Kábelek alul
-      const baseY_m = g.bed + 0.02;
+      // segédfüggvények: m -> px
+      const X = (m)=> ox + m*pxPerM;
+      const Yb = (m)=> topY + trenchHpx - m*pxPerM;
+
+      // kábelek alul
+      const baseY_m = g.bed + 0.02;                 // kis vizuális ráhagyás
       let rowYs = (g.rows.length===1) ? [baseY_m] : [baseY_m, baseY_m + 0.20];
-      const startX_px = (m)=> ox + m*pxPerM_X;
-      const yFromBottom_px = (m)=> topY + trenchHpx - m*pxPerM_Y;
 
       g.rows.forEach((row, rIdx)=>{
         if(row.type==="trefoil"){
@@ -365,22 +370,23 @@
 
           row.groups.forEach((gp)=>{
             const d = gp.d_m, r = d/2;
-            // alsó két kör
-            const yB_m = rowYs[rIdx] + r;
-            const cxL_m = x0_m + r;
-            const cxR_m = x0_m + r + d;
-            // felső kör: d*sqrt(3)/2 feljebb + pici vizuális emelés (epsilon), hogy ne "csússzon össze"
-            const eps = Math.max(0.005, 0.02*d);      // 2% d vagy min. 5 mm
-            const cxT_m = x0_m + d;
-            const yT_m  = yB_m + d*Math.sqrt(3)/2 + eps;
+            const yB = rowYs[rIdx] + r;
+            const cxL = x0_m + r;
+            const cxR = x0_m + r + d;
+            // felső kör: d*sqrt(3)/2 feljebb + kis emelés, hogy ne „érjen össze”
+            const eps = Math.max(0.005, 0.02*d);
+            const cxT = x0_m + d;
+            const yT  = yB + d*Math.sqrt(3)/2 + eps;
 
-            [ [cxL_m,yB_m], [cxR_m,yB_m], [cxT_m,yT_m] ].forEach(([cx,cy])=>{
-              svg.appendChild(circleEl(startX_px(cx), yFromBottom_px(cy), r*pxPerM_X, "#2a5fff", "#2a5fff55"));
+            [[cxL,yB],[cxR,yB],[cxT,yT]].forEach(([cx,cy])=>{
+              svg.appendChild(circleEl(X(cx), Yb(cy), r*pxPerM, "#2a5fff", "#2a5fff55"));
             });
 
             x0_m += 2*d + g.baseSpacing;
           });
+
         } else {
+          // egy/ két sor
           const arr = row.items;
           const rowW = arr.length ? arr.reduce((s,it)=>s+it.d_m,0) + (arr.length-1)*g.baseSpacing : 0;
           let x_m = (g.trenchWidth - rowW)/2;
@@ -389,23 +395,23 @@
 
           arr.forEach((it, i)=>{
             const r = it.d_m/2;
-            svg.appendChild(circleEl(startX_px(x_m + r), yFromBottom_px(cy_m), r*pxPerM_X, "#2a5fff", "#2a5fff55"));
+            svg.appendChild(circleEl(X(x_m + r), Yb(cy_m), r*pxPerM, "#2a5fff", "#2a5fff55"));
             x_m += it.d_m + (i<arr.length-1 ? g.baseSpacing : 0);
           });
         }
       });
 
-      // Méretek
+      // méretvonalak
       const wY = topY + trenchHpx + 26;
-      svg.appendChild(dimLine(ox, wY, ox+trenchWpx, wY, `${round(g.trenchWidth,2)} m`));
+      svg.appendChild(dimLine(ox, wY, ox+trenchWpx, wY, `${(g.trenchWidth).toFixed(2)} m`));
       const dX = ox - 34;
-      svg.appendChild(dimVLine(dX, topY, topY+trenchHpx, `${round(g.trenchDepth,2)} m`));
+      svg.appendChild(dimVLine(dX, topY, topY+trenchHpx, `${(g.trenchDepth).toFixed(2)} m`));
       const ySide = topY + trenchHpx + 8;
-      svg.appendChild(dimLine(ox, ySide, ox + g.side*pxPerM_X, ySide, `${round(g.side,2)} m oldal`));
-      svg.appendChild(dimLine(ox+trenchWpx - g.side*pxPerM_X, ySide, ox+trenchWpx, ySide, `${round(g.side,2)} m oldal`));
+      svg.appendChild(dimLine(ox, ySide, X(g.side), ySide, `${g.side.toFixed(2)} m oldal`));
+      svg.appendChild(dimLine(ox+trenchWpx - g.side*pxPerM, ySide, ox+trenchWpx, ySide, `${g.side.toFixed(2)} m oldal`));
     }
 
-    // ===== SVG primitivek =====
+    // ===== SVG segédek =====
     function rectEl(x,y,w,h,stroke,fill){
       const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
       r.setAttribute("x", x); r.setAttribute("y", y); r.setAttribute("width", w); r.setAttribute("height", h);
@@ -509,16 +515,16 @@
       ents.push(dxfHeader());
       const W = g.trenchWidth, D = g.trenchDepth;
 
-      // Árok kontúr
+      // Árok kontúr (origó: bal-alsó sarok)
       ents.push(dxfLine(0,0, W,0, "TRENCH"));
       ents.push(dxfLine(W,0, W,D, "TRENCH"));
       ents.push(dxfLine(W,D, 0,D, "TRENCH"));
       ents.push(dxfLine(0,D, 0,0, "TRENCH"));
 
-      // Ágyazóréteg
+      // Alsó ágyazóréteg
       if(g.bed>0){ ents.push(dxfLine(0,g.bed, W,g.bed, "BED")); }
 
-      // Kábelek (trefoil pontos, single/multi sor alul)
+      // Kábelek (trefoil pontos; single/multi sor alul)
       const baseY = g.bed + 0.02;
       let rowYs = (g.rows.length===1) ? [baseY] : [baseY, baseY + 0.20];
 
@@ -548,23 +554,21 @@
         }
       });
 
-      // Méretek
+      // Méretek & jelölések
       ents.push(dxfLine(0,-0.10, W,-0.10, "DIM"));
       ents.push(dxfLine(0,-0.12, 0,-0.08, "DIM"));
       ents.push(dxfLine(W,-0.12, W,-0.08, "DIM"));
-      ents.push(dxfText(W/2, -0.16, 0.05, `${round(W,2)} m`, "DIM"));
+      ents.push(dxfText(W/2, -0.16, 0.05, `${(W).toFixed(2)} m`, "DIM"));
       ents.push(dxfLine(-0.10,0, -0.10,D, "DIM"));
       ents.push(dxfLine(-0.12,0, -0.08,0, "DIM"));
       ents.push(dxfLine(-0.12,D, -0.08,D, "DIM"));
-      ents.push(dxfText(-0.14, D/2, 0.05, `${round(D,2)} m`, "DIM"));
+      ents.push(dxfText(-0.14, D/2, 0.05, `${(D).toFixed(2)} m`, "DIM"));
 
-      // Oldaltávolság
       ents.push(dxfLine(0,-0.30, g.side, -0.30, "DIM"));
-      ents.push(dxfText(g.side/2, -0.34, 0.04, `${round(g.side,2)} m oldal`, "DIM"));
+      ents.push(dxfText(g.side/2, -0.34, 0.04, `${g.side.toFixed(2)} m oldal`, "DIM"));
       ents.push(dxfLine(W-g.side, -0.30, W, -0.30, "DIM"));
-      ents.push(dxfText(W-g.side/2, -0.34, 0.04, `${round(g.side,2)} m oldal`, "DIM"));
+      ents.push(dxfText(W-g.side/2, -0.34, 0.04, `${g.side.toFixed(2)} m oldal`, "DIM"));
 
-      // Jelzőszalag
       const tapeY = g.topOfCable + 0.30;
       ents.push(dxfLine(-0.20, tapeY, W+0.20, tapeY, "TAPE"));
       ents.push(dxfText(W+0.22, tapeY, 0.04, "jelzőszalag +0.30 m", "TAPE"));
@@ -581,13 +585,13 @@
     }
     $("#exportDxfBtn").addEventListener("click", exportDXF);
 
-    // reakciók
+    // Reakciók
     [terrain, depthInput, layoutSel, sideClear, spacing, bedding].forEach(el=>{
       el.addEventListener("input", compute);
       el.addEventListener("change", compute);
     });
 
-    // init
+    // Init
     function init(){ refreshLabels(); renderTable(); compute(); }
     init();
   </script>
