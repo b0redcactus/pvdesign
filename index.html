@@ -1,82 +1,263 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8" />
-<title>work timer</title>
-<style>
-  body {
-    display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f0f0;
-    font-family: sans-serif;
-  }
-  .cup {
-    position: relative;
-    width: 100px;
-    height: 150px;
-    border: 4px solid #6b4c1a;
-    border-radius: 0 0 40px 40px;
-    background: #fff;
-    overflow: hidden;
-  }
-  .coffee {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 0%;
-    background: #6b4c1a;
-    transition: height 1s linear;
-  }
-  .handle {
-    position: absolute;
-    top: 30px;
-    right: -30px;
-    width: 30px;
-    height: 70px;
-    border: 4px solid #6b4c1a;
-    border-radius: 40px;
-    background: #fff;
-  }
-  .timer-text {
-    margin-top: 20px;
-    font-size: 18px;
-    text-align: center;
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kábelárok szélesség kalkulátor (MSZ 13207:2020 alapján)</title>
+  <style>
+    :root { --pad: 14px; --radius: 14px; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5; margin: 0; background:#0b0f1a; color:#e8eefc; }
+    header { padding: 32px var(--pad); text-align: center; background:linear-gradient(180deg,#121a2b,#0b0f1a); border-bottom:1px solid #1f2a44; }
+    h1 { margin: 0 0 6px; font-size: clamp(20px,3.5vw,28px); }
+    .wrap { max-width: 980px; margin: 24px auto; padding: 0 var(--pad); display: grid; gap: 16px; }
+    .card { background: #121a2b; border:1px solid #1f2a44; border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .card h2 { margin: 0; padding: 14px var(--pad); border-bottom:1px solid #1f2a44; font-size: 18px; color:#cdd8f8; }
+    .content { padding: var(--pad); }
+    label { display:block; font-size:14px; opacity:.9; margin-bottom:6px; }
+    input, select, button { font: inherit; }
+    input[type="text"], input[type="number"], select {
+      width: 100%; padding: 10px 12px; background:#0b1222; color:#e8eefc; border:1px solid #223154; border-radius:10px;
+    }
+    .grid { display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:10px; }
+    .row { display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:10px; align-items: end; }
+    .small { font-size:13px; opacity:.9 }
+    .muted { opacity:.8 }
+    .btn {
+      padding: 10px 14px; background:#2a5fff; color:white; border:0; border-radius:10px; cursor:pointer; font-weight:600;
+    }
+    .btn.secondary { background:#1b2846; border:1px solid #2a3b66; }
+    .btn:disabled { opacity:.6; cursor:not-allowed; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom:1px solid #1f2a44; font-size:14px; }
+    th { text-align:left; color:#cdd8f8; }
+    .right { text-align:right; }
+    .pill { display:inline-block; padding: 4px 8px; background:#0b1222; border:1px solid #223154; border-radius:999px; font-size:12px; }
+    .result { font-size: clamp(22px, 3vw, 28px); font-weight: 800; letter-spacing: .2px; }
+    .viz { height: 120px; position: relative; background: #0b1222; border:1px dashed #2a3b66; border-radius: 10px; display:flex; align-items:center; justify-content:center; }
+    .viz .trench { position:relative; width: 90%; height: 70px; background:#09101f; border:2px solid #33456e; border-radius:10px; margin: 10px; }
+    .viz .side { position:absolute; top: -22px; font-size:12px; color:#a9b8e8; }
+    .viz .side.left { left: -4px; }
+    .viz .side.right { right: -4px; }
+    .viz .cable { position:absolute; bottom:6px; border-radius:50%; background:#2a5fff22; border:2px solid #2a5fff; }
+    footer { padding: 20px var(--pad); text-align:center; color:#9fb0e9; }
+    a { color:#9fb0e9; }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>Kábelárok szélesség kalkulátor</h1>
+    <div class="small muted">MSZ 13207:2020 előírások szerinti egyszerűsített számítás (síkban fektetés)</div>
+  </header>
 
-<div>
-  <div class="cup">
-    <div class="coffee"></div>
-    <div class="handle"></div>
-  </div>
-  <div class="timer-text" id="timerText">30:00</div>
-</div>
+  <main class="wrap">
+    <section class="card">
+      <h2>1) Kábelek megadása</h2>
+      <div class="content">
+        <div class="row" id="adder">
+          <div>
+            <label>Kábel megnevezése (opcionális)</label>
+            <input type="text" id="name" placeholder="pl. 1×240 mm² vagy NA2XY 4×70" />
+          </div>
+          <div>
+            <label>Külső átmérő (mm)</label>
+            <input type="number" id="diam" min="1" step="0.1" placeholder="pl. 52" />
+          </div>
+          <div>
+            <label>Mennyiség (db)</label>
+            <input type="number" id="qty" min="1" step="1" value="1" />
+          </div>
+          <div>
+            <button class="btn" id="add">Hozzáadás</button>
+          </div>
+        </div>
 
-<script>
-  const coffee = document.querySelector('.coffee');
-  const timerText = document.getElementById('timerText');
-  const totalSeconds = 30 * 60; // 30 perc
-  let elapsedSeconds = 0;
+        <div style="margin-top:14px">
+          <table id="list">
+            <thead>
+              <tr>
+                <th>Kábel</th>
+                <th class="right">Ø (mm)</th>
+                <th class="right">db</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <button class="btn secondary" id="clear" style="margin-top:10px">Lista törlése</button>
+        </div>
+      </div>
+    </section>
 
-  function updateTimer() {
-    elapsedSeconds++;
-    if (elapsedSeconds > totalSeconds) {
-      clearInterval(timerInterval);
-      return;
+    <section class="card">
+      <h2>2) Elrendezés & szabályok</h2>
+      <div class="content">
+        <div class="grid">
+          <div>
+            <label>Elrendezés</label>
+            <select id="layout">
+              <option value="flat">Síkban (egysorban)</option>
+            </select>
+          </div>
+          <div>
+            <label>Oldaltartás (m)</label>
+            <input type="number" id="sideClear" min="0.1" step="0.01" value="0.10" />
+            <div class="small muted">MSZ min.: 0,10 m oldalanként</div>
+          </div>
+          <div>
+            <label>Kábelek közti távolság (m)</label>
+            <input type="number" id="spacing" min="0.07" step="0.01" value="0.07" />
+            <div class="small muted">MSZ min.: 0,07 m</div>
+          </div>
+          <div style="align-self:end;">
+            <button class="btn" id="calc">Számítás</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>3) Eredmény</h2>
+      <div class="content">
+        <div id="out" class="result">Adj meg kábeleket, majd katt a „Számítás”-ra.</div>
+        <div id="details" class="small muted" style="margin-top:8px"></div>
+
+        <div class="viz" style="margin-top:12px">
+          <div class="trench" id="trenchViz">
+            <div class="side left">fal</div>
+            <div class="side right">fal</div>
+            <!-- kábel körök dinamikusan -->
+          </div>
+        </div>
+
+        <div class="small" style="margin-top:10px">
+          Megjegyzés: az árok szélessége <strong>legalább 0,40 m</strong>, illetve
+          <strong>oldalt legalább 0,10 m</strong> tartást és a kábelek között
+          <strong>legalább 0,07 m</strong> távolságot vesz figyelembe (MSZ 13207:2020). A számítás az egysoros (sík) elrendezésre vonatkozik.
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Hasznos tervezési emlékeztetők</h2>
+      <div class="content small">
+        • Tipikus fektetési mélység: szabályozott terepen 0,6–0,8 m. • Jelzőszalag a kábel felett ≥ 0,3 m.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Készült tájékoztató kalkulátorként – végső méretezésnél mindig a vonatkozó terv és a teljes MSZ 13207:2020 az irányadó.
+  </footer>
+
+  <script>
+    const listBody = document.querySelector('#list tbody');
+    const addBtn = document.getElementById('add');
+    const clearBtn = document.getElementById('clear');
+    const calcBtn = document.getElementById('calc');
+    const out = document.getElementById('out');
+    const details = document.getElementById('details');
+    const trenchViz = document.getElementById('trenchViz');
+
+    let rows = [];
+
+    function renderList() {
+      listBody.innerHTML = '';
+      rows.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.name || '—'}</td>
+          <td class="right">${r.diam_mm.toFixed(1)}</td>
+          <td class="right">${r.qty}</td>
+          <td class="right"><button class="btn secondary" data-i="${i}">Törlés</button></td>
+        `;
+        listBody.appendChild(tr);
+      });
+      listBody.querySelectorAll('button[data-i]').forEach(btn=>{
+        btn.addEventListener('click', e=>{
+          const i = +e.target.getAttribute('data-i');
+          rows.splice(i,1);
+          renderList();
+        });
+      });
+      drawViz([]);
     }
-    // Frissítjük a kávé magasságát százalékban
-    const percent = (elapsedSeconds / totalSeconds) * 100;
-    coffee.style.height = percent + '%';
 
-    // Frissítjük a visszaszámlálót (perc:mp)
-    const remaining = totalSeconds - elapsedSeconds;
-    const min = Math.floor(remaining / 60);
-    const sec = remaining % 60;
-    timerText.textContent = `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
-  }
+    function addRow() {
+      const name = document.getElementById('name').value.trim();
+      const diam = +document.getElementById('diam').value;
+      const qty = +document.getElementById('qty').value;
 
-  const timerInterval = setInterval(updateTimer, 1000);
-</script>
+      if (!diam || diam <= 0 || !qty || qty <= 0) {
+        alert('Adj meg érvényes átmérőt (mm) és darabszámot!');
+        return;
+      }
+      rows.push({ name, diam_mm: diam, qty: qty|0 });
+      document.getElementById('name').value = '';
+      document.getElementById('diam').value = '';
+      document.getElementById('qty').value = 1;
+      renderList();
+    }
 
+    function calc() {
+      if (rows.length === 0) {
+        out.textContent = 'Adj meg legalább egy kábelt.';
+        details.textContent = '';
+        drawViz([]);
+        return;
+      }
+
+      const sideClear = Math.max(0.10, +document.getElementById('sideClear').value || 0.10); // m
+      const spacing = Math.max(0.07, +document.getElementById('spacing').value || 0.07);     // m
+      const layout = document.getElementById('layout').value;
+
+      // Bontsd ki a kábeleket darabra, hogy egyszerű legyen a sík elrendezés összege
+      let cables_m = [];
+      rows.forEach(r => {
+        const d_m = r.diam_mm / 1000;
+        for (let i=0;i<r.qty;i++) cables_m.push({ name:r.name, d:d_m });
+      });
+
+      // Síkban: összes átmérő + (N-1)*spacing + 2*sideClear
+      const N = cables_m.length;
+      const sumDiam = cables_m.reduce((a,c)=>a+c.d, 0);
+      const insideNeeded = (2*sideClear) + sumDiam + (N>1 ? (N-1)*spacing : 0);
+      const trenchWidth = Math.max(0.40, insideNeeded); // min. 0,40 m
+
+      // Megjelenítés
+      out.innerHTML = `Szükséges kábelárok szélesség: <span class="pill">${(trenchWidth*100).toFixed(1)} cm</span>`;
+      details.innerHTML =
+        `Összes kábel: ${N} db · Össz. átmérő: ${(sumDiam*100).toFixed(1)} cm · Közök: ${(N>1?(N-1)*spacing*100:0).toFixed(1)} cm · ` +
+        `Oldaltartás: ${(2*sideClear*100).toFixed(0)} cm · Elrendezés: ${layout==='flat'?'síkban':''}`;
+
+      drawViz(cables_m, trenchWidth, sideClear, spacing);
+    }
+
+    function drawViz(cables, trenchWidth=0.6, side=0.1, spacing=0.07) {
+      // Egyszerű arányosított rajz
+      trenchViz.innerHTML = '<div class="side left">fal</div><div class="side right">fal</div>';
+      const W = trenchViz.clientWidth * 0.90; // belső vizuális szélesség
+      const pxPerM = W / trenchWidth;
+
+      let x = side * pxPerM; // induljunk bal oldali oldaltartástól
+      const bottom = 6;
+
+      cables.forEach((c, idx) => {
+        const r = (c.d/2) * pxPerM;
+        const el = document.createElement('div');
+        el.className = 'cable';
+        el.style.width = (2*r) + 'px';
+        el.style.height = (2*r) + 'px';
+        el.style.left = (x) + 'px';
+        el.style.bottom = bottom + 'px';
+        trenchViz.appendChild(el);
+        x += 2*r + (idx < cables.length-1 ? spacing*pxPerM : 0);
+      });
+    }
+
+    addBtn.addEventListener('click', addRow);
+    clearBtn.addEventListener('click', ()=>{ rows = []; renderList(); out.textContent='Lista törölve.'; details.textContent=''; });
+    calcBtn.addEventListener('click', calc);
+    renderList();
+  </script>
 </body>
 </html>
