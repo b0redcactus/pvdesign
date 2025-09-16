@@ -3,261 +3,396 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Kábelárok szélesség kalkulátor (MSZ 13207:2020 alapján)</title>
+  <title>Kábelárok kalkulátor – MSZ 13207:2020 szerint</title>
   <style>
-    :root { --pad: 14px; --radius: 14px; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5; margin: 0; background:#0b0f1a; color:#e8eefc; }
-    header { padding: 32px var(--pad); text-align: center; background:linear-gradient(180deg,#121a2b,#0b0f1a); border-bottom:1px solid #1f2a44; }
-    h1 { margin: 0 0 6px; font-size: clamp(20px,3.5vw,28px); }
-    .wrap { max-width: 980px; margin: 24px auto; padding: 0 var(--pad); display: grid; gap: 16px; }
-    .card { background: #121a2b; border:1px solid #1f2a44; border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-    .card h2 { margin: 0; padding: 14px var(--pad); border-bottom:1px solid #1f2a44; font-size: 18px; color:#cdd8f8; }
-    .content { padding: var(--pad); }
-    label { display:block; font-size:14px; opacity:.9; margin-bottom:6px; }
-    input, select, button { font: inherit; }
-    input[type="text"], input[type="number"], select {
-      width: 100%; padding: 10px 12px; background:#0b1222; color:#e8eefc; border:1px solid #223154; border-radius:10px;
-    }
-    .grid { display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:10px; }
-    .row { display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:10px; align-items: end; }
-    .small { font-size:13px; opacity:.9 }
-    .muted { opacity:.8 }
-    .btn {
-      padding: 10px 14px; background:#2a5fff; color:white; border:0; border-radius:10px; cursor:pointer; font-weight:600;
-    }
-    .btn.secondary { background:#1b2846; border:1px solid #2a3b66; }
-    .btn:disabled { opacity:.6; cursor:not-allowed; }
-    table { width:100%; border-collapse: collapse; }
-    th, td { padding: 10px; border-bottom:1px solid #1f2a44; font-size:14px; }
-    th { text-align:left; color:#cdd8f8; }
-    .right { text-align:right; }
-    .pill { display:inline-block; padding: 4px 8px; background:#0b1222; border:1px solid #223154; border-radius:999px; font-size:12px; }
-    .result { font-size: clamp(22px, 3vw, 28px); font-weight: 800; letter-spacing: .2px; }
-    .viz { height: 120px; position: relative; background: #0b1222; border:1px dashed #2a3b66; border-radius: 10px; display:flex; align-items:center; justify-content:center; }
-    .viz .trench { position:relative; width: 90%; height: 70px; background:#09101f; border:2px solid #33456e; border-radius:10px; margin: 10px; }
-    .viz .side { position:absolute; top: -22px; font-size:12px; color:#a9b8e8; }
-    .viz .side.left { left: -4px; }
-    .viz .side.right { right: -4px; }
-    .viz .cable { position:absolute; bottom:6px; border-radius:50%; background:#2a5fff22; border:2px solid #2a5fff; }
-    footer { padding: 20px var(--pad); text-align:center; color:#9fb0e9; }
-    a { color:#9fb0e9; }
+    :root { --gap: 12px; --radius: 12px; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;line-height:1.35;margin:0;background:#0b1220;color:#e7ecf5}
+    header{padding:24px 16px;text-align:center;background:#0e1630;border-bottom:1px solid #26324d}
+    main{max-width:1100px;margin:0 auto;padding:20px;display:grid;gap:20px}
+    .card{background:#121a34;border:1px solid #26324d;border-radius:var(--radius);padding:16px}
+    h1{font-size:clamp(1.2rem,2.5vw,1.6rem);margin:0 0 6px}
+    h2{font-size:1.05rem;margin:0 0 10px}
+    small, label span.hint{color:#9fb0cf}
+    .row{display:flex;gap:var(--gap);flex-wrap:wrap;align-items:flex-end}
+    .row > *{flex:1 1 220px}
+    input,select,button,textarea{width:100%;box-sizing:border-box;border-radius:10px;border:1px solid #39507d;background:#0b142c;color:#e7ecf5;padding:10px 12px}
+    input[type=number]{appearance:textfield}
+    button{cursor:pointer;background:#2a6df3;border-color:#2a6df3}
+    button.secondary{background:#182445;border-color:#39507d}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #26324d;text-align:left}
+    tr:hover td{background:#0f1a34}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #39507d;background:#0b142c;color:#cdd9f0;font-size:.85rem}
+    .grid{display:grid;gap:var(--gap)}
+    .two{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .result{font-size:1.25rem}
+    .ok{color:#86efac}.warn{color:#fbbf24}.bad{color:#f87171}
+    details{border:1px dashed #39507d;border-radius:10px;padding:10px}
+    summary{cursor:pointer;color:#cfe1ff}
+    footer{opacity:.85;padding:10px 16px;text-align:center}
+    .muted{color:#9fb0cf}
+    .tag{margin-left:6px}
+    .inline-help{font-size:.9rem;color:#9fb0cf}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border:1px solid #39507d;border-radius:999px;background:#0b142c}
+    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .right{text-align:right}
+    .kib{white-space:nowrap}
   </style>
 </head>
 <body>
   <header>
-    <h1>Kábelárok szélesség kalkulátor</h1>
-    <div class="small muted">MSZ 13207:2020 előírások szerinti egyszerűsített számítás (síkban fektetés)</div>
+    <h1>Kábelárok kalkulátor – MSZ 13207:2020</h1>
+    <small>Másold be a kábeleket, válaszd ki a fektetést, és megkapod a szabvány szerinti minimális méreteket.</small>
   </header>
 
-  <main class="wrap">
+  <main>
+    <!-- BEÁLLÍTÁSOK -->
     <section class="card">
-      <h2>1) Kábelek megadása</h2>
-      <div class="content">
-        <div class="row" id="adder">
-          <div>
-            <label>Kábel megnevezése (opcionális)</label>
-            <input type="text" id="name" placeholder="pl. 1×240 mm² vagy NA2XY 4×70" />
-          </div>
-          <div>
-            <label>Külső átmérő (mm)</label>
-            <input type="number" id="diam" min="1" step="0.1" placeholder="pl. 52" />
-          </div>
-          <div>
-            <label>Mennyiség (db)</label>
-            <input type="number" id="qty" min="1" step="1" value="1" />
-          </div>
-          <div>
-            <button class="btn" id="add">Hozzáadás</button>
-          </div>
-        </div>
-
-        <div style="margin-top:14px">
-          <table id="list">
-            <thead>
-              <tr>
-                <th>Kábel</th>
-                <th class="right">Ø (mm)</th>
-                <th class="right">db</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-          <button class="btn secondary" id="clear" style="margin-top:10px">Lista törlése</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>2) Elrendezés & szabályok</h2>
-      <div class="content">
-        <div class="grid">
-          <div>
-            <label>Elrendezés</label>
-            <select id="layout">
-              <option value="flat">Síkban (egysorban)</option>
+      <h2>1) Általános beállítások</h2>
+      <div class="row">
+        <div>
+          <label>Terület típusa
+            <select id="terrain">
+              <option value="regulated">Szabályozott terep (jellemzően beépített) – 0,6…0,8 m fektetési mélység</option>
+              <option value="unregulated">Szabályozatlan terep (pl. külterület) – min. 1,0 m fektetési mélység</option>
             </select>
-          </div>
-          <div>
-            <label>Oldaltartás (m)</label>
-            <input type="number" id="sideClear" min="0.1" step="0.01" value="0.10" />
-            <div class="small muted">MSZ min.: 0,10 m oldalanként</div>
-          </div>
-          <div>
-            <label>Kábelek közti távolság (m)</label>
-            <input type="number" id="spacing" min="0.07" step="0.01" value="0.07" />
-            <div class="small muted">MSZ min.: 0,07 m</div>
-          </div>
-          <div style="align-self:end;">
-            <button class="btn" id="calc">Számítás</button>
-          </div>
+          </label>
+        </div>
+        <div>
+          <label>Választott fektetési mélység (m) 
+            <input id="depth" type="number" step="0.1" min="0.3" value="0.7">
+          </label>
+          <div class="inline-help">Ajánlott: 0,7 m (szabvány szerinti kiinduló érték).</div>
+        </div>
+        <div>
+          <label>Elrendezés a kábelárokban
+            <select id="layout">
+              <option value="single">Egy síkban (sorba rendezve)</option>
+              <option value="trefoil">Három egyerű kábel érintő háromszögben (trefoil) – csoportonként 3 db</option>
+              <option value="multirow">Több réteg (egymás felett) – min. 0,2 m ágyazóréteg a rétegek között</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Oldaltávolság a kábel és az árok fala között (m)
+            <input id="sideClear" type="number" step="0.01" value="0.10" min="0.10">
+          </label>
+          <div class="inline-help">Min. 0,10 m mindkét oldalon.</div>
+        </div>
+        <div>
+          <label>Kábelek közötti távolság (m)
+            <input id="spacing" type="number" step="0.01" value="0.07" min="0.05">
+          </label>
+          <div class="inline-help">Alapértelmezés: 0,07 m. Védőcsövek közt min. 0,05 m (állítható).</div>
+        </div>
+        <div>
+          <label>Ágyazóréteg alul/felül (m)
+            <input id="bedding" type="number" step="0.01" value="0.05" min="0.00">
+          </label>
+          <div class="inline-help">I–II. talajosztályban homokágy nem kötelező; egyébként alul és felül min. 0,05 m.</div>
         </div>
       </div>
     </section>
 
+    <!-- KÁBEL LISTA -->
     <section class="card">
-      <h2>3) Eredmény</h2>
-      <div class="content">
-        <div id="out" class="result">Adj meg kábeleket, majd katt a „Számítás”-ra.</div>
-        <div id="details" class="small muted" style="margin-top:8px"></div>
-
-        <div class="viz" style="margin-top:12px">
-          <div class="trench" id="trenchViz">
-            <div class="side left">fal</div>
-            <div class="side right">fal</div>
-            <!-- kábel körök dinamikusan -->
-          </div>
+      <h2>2) Kábelek felvétele</h2>
+      <div class="row">
+        <div>
+          <label>Kábel külső átmérő (mm)
+            <input id="diameter" type="number" step="1" min="1" value="40">
+          </label>
         </div>
-
-        <div class="small" style="margin-top:10px">
-          Megjegyzés: az árok szélessége <strong>legalább 0,40 m</strong>, illetve
-          <strong>oldalt legalább 0,10 m</strong> tartást és a kábelek között
-          <strong>legalább 0,07 m</strong> távolságot vesz figyelembe (MSZ 13207:2020). A számítás az egysoros (sík) elrendezésre vonatkozik.
+        <div>
+          <label>Darabszám
+            <input id="count" type="number" step="1" min="1" value="3">
+          </label>
         </div>
+        <div>
+          <label>Védőcsőben?
+            <select id="inDuct">
+              <option value="no">Nem</option>
+              <option value="yes">Igen (védőcső)</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <label>Megjegyzés (opcionális)
+            <input id="note" type="text" placeholder="pl. 3×1C 240 mm² trefoil csoport">
+          </label>
+        </div>
+        <div>
+          <button id="addCable">Felvétel</button>
+        </div>
+      </div>
+
+      <table id="cableTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Átmérő (mm)</th><th>Darab</th><th>Védőcső</th><th>Megjegyzés</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="flex">
+        <span class="chip">Min. árokszélesség: <span class="mono kib">400 mm</span></span>
+        <span class="chip">Min. kábelek közti távolság: <span class="mono">70 mm</span> (<span class="mono">50 mm</span> védőcsövek közt)</span>
+        <span class="chip">Oldaltávolság: <span class="mono">100 mm</span> / oldal</span>
       </div>
     </section>
 
+    <!-- EREDMÉNY -->
     <section class="card">
-      <h2>Hasznos tervezési emlékeztetők</h2>
-      <div class="content small">
-        • Tipikus fektetési mélység: szabályozott terepen 0,6–0,8 m. • Jelzőszalag a kábel felett ≥ 0,3 m.
+      <h2>3) Eredmények</h2>
+      <div class="grid two">
+        <div class="result">Számított <strong>kábelárok-szélesség</strong>: <span id="widthOut" class="pill">–</span></div>
+        <div class="result">Becsült <strong>kábelárok-mélység</strong>: <span id="depthOut" class="pill">–</span></div>
       </div>
+      <div class="grid">
+        <div><span class="pill">Jelzőszalag: min. 0,3 m-rel a legfelső kábel felett</span> <span id="tapeLevel" class="tag muted"></span></div>
+        <div class="inline-help">A mélység számítás figyelembe veszi az alul/felül ágyazóréteget és a kiválasztott fektetési mélységet.</div>
+      </div>
+
+      <details>
+        <summary>Haladó részletek, feltételezések és ellenőrzés</summary>
+        <div class="grid three">
+          <div>
+            <h3>Elrendezési modell</h3>
+            <ul>
+              <li><strong>Egy sík:</strong> a kábeleket egy sorban helyezzük el, a megadott „kábelek közötti távolság” a köpenyek <em>szabad</em> távolsága (középtáv = d + távolság).</li>
+              <li><strong>Trefoil:</strong> 3-as csoportok egymást érintve, csoportok közt a megadott távolság.</li>
+              <li><strong>Több réteg:</strong> az egyes rétegek sorba rendezve; rétegek között min. 0,20 m tömörített ágyazóréteg.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Oldaltávolság &amp; min. szélesség</h3>
+            <ul>
+              <li>Oldalt min. 0,10 m kábeltől az árok faláig.</li>
+              <li>Egy kábelrendszer esetén min. 0,40 m árokszélesség – a kalkulátor a nagyobbik értéket veszi.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Védőcső opció</h3>
+            <ul>
+              <li>Ha a kábel védőcsőben van, a kötelező min. távolság a csövek között 0,05 m.</li>
+              <li>Átlagos becslésként a cső külső átmérőjét a kábelátmérő + 2×5 mm játékkal vesszük (gyártótól függően).</li>
+            </ul>
+          </div>
+        </div>
+        <p class="muted">Figyelem: a szabvány áramterhelhetési korrekciói (f<sub>2</sub>, f<sub>4</sub> stb.) és speciális esetei itt nem kerülnek kiszámításra; ez az eszköz a <em>geometriai</em> méreteket határozza meg.</p>
+      </details>
+    </section>
+
+    <!-- LÁTVÁNY / EXPORT -->
+    <section class="card">
+      <h2>4) Gyors ellenőrző lista</h2>
+      <ul>
+        <li>Fektetési mélység megfelel a tereptípusnak?</li>
+        <li>Alul/felül megvan az ágyazóréteg (ha szükséges)?</li>
+        <li>Kábelek közötti távolság &ge; megadott minimum?</li>
+        <li>Oldaltávolság &ge; 0,10 m mindkét oldalon?</li>
+        <li>Jelzőszalag a kábel(ek) felett legalább 0,3 m-rel?</li>
+        <li>MV kábeleknél védőborítás (fedlap) alkalmazása szükséges?</li>
+      </ul>
+      <button class="secondary" id="exportBtn">Eredmény letöltése (TXT)</button>
+    </section>
+
+    <section class="card">
+      <h2>Hivatkozás</h2>
+      <small>MSZ 13207:2020 – Kábelek és vezetékek létesítése. (Ez az oldal ezt a szabványt követi a geometriai (szélesség/mélység) minimumoknál.)</small>
     </section>
   </main>
 
-  <footer>
-    Készült tájékoztató kalkulátorként – végső méretezésnél mindig a vonatkozó terv és a teljes MSZ 13207:2020 az irányadó.
-  </footer>
+  <footer class="muted">Készült a SolServices részére • ©</footer>
 
   <script>
-    const listBody = document.querySelector('#list tbody');
-    const addBtn = document.getElementById('add');
-    const clearBtn = document.getElementById('clear');
-    const calcBtn = document.getElementById('calc');
-    const out = document.getElementById('out');
-    const details = document.getElementById('details');
-    const trenchViz = document.getElementById('trenchViz');
+    const $ = (sel) => document.querySelector(sel);
+    const state = { items: [] };
 
-    let rows = [];
+    const tableBody = $("#cableTable tbody");
+    const terrain = $("#terrain");
+    const depthInput = $("#depth");
+    const layoutSel = $("#layout");
+    const sideClear = $("#sideClear");
+    const spacing = $("#spacing");
+    const bedding = $("#bedding");
+    const widthOut = $("#widthOut");
+    const depthOut = $("#depthOut");
+    const tapeLevel = $("#tapeLevel");
 
-    function renderList() {
-      listBody.innerHTML = '';
-      rows.forEach((r, i) => {
-        const tr = document.createElement('tr');
+    // Helpers
+    function mm(v){ return Number(v) || 0 }
+    function round(v,dec=2){ const p=Math.pow(10,dec); return Math.round(v*p)/p }
+    function toMeters(mmVal){ return (mmVal/1000) }
+    function safeParse(v,def=0){ const n=Number(v); return isFinite(n)?n:def }
+
+    function renderTable(){
+      tableBody.innerHTML = "";
+      state.items.forEach((it,idx)=>{
+        const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${r.name || '—'}</td>
-          <td class="right">${r.diam_mm.toFixed(1)}</td>
-          <td class="right">${r.qty}</td>
-          <td class="right"><button class="btn secondary" data-i="${i}">Törlés</button></td>
+          <td>${idx+1}</td>
+          <td>${it.diam} mm</td>
+          <td>${it.count}</td>
+          <td>${it.inDuct ? "Igen" : "Nem"}</td>
+          <td>${it.note||""}</td>
+          <td class="right"><button class="secondary" data-remove="${idx}">Törlés</button></td>
         `;
-        listBody.appendChild(tr);
+        tableBody.appendChild(tr);
       });
-      listBody.querySelectorAll('button[data-i]').forEach(btn=>{
-        btn.addEventListener('click', e=>{
-          const i = +e.target.getAttribute('data-i');
-          rows.splice(i,1);
-          renderList();
-        });
-      });
-      drawViz([]);
+      tableBody.querySelectorAll("button[data-remove]").forEach(btn=>{
+        btn.addEventListener("click", e=>{
+          const i = Number(e.target.getAttribute("data-remove"));
+          state.items.splice(i,1);
+          renderTable();
+          compute();
+        })
+      })
     }
 
-    function addRow() {
-      const name = document.getElementById('name').value.trim();
-      const diam = +document.getElementById('diam').value;
-      const qty = +document.getElementById('qty').value;
+    function addCable(){
+      const diam = mm($("#diameter").value);
+      const count = Math.max(1, Math.floor(safeParse($("#count").value,1)));
+      const inDuct = $("#inDuct").value === "yes";
+      const note = $("#note").value.trim();
 
-      if (!diam || diam <= 0 || !qty || qty <= 0) {
-        alert('Adj meg érvényes átmérőt (mm) és darabszámot!');
-        return;
+      if(diam<=0){ alert("Adj meg érvényes kábel-átmérőt (mm)!"); return; }
+      state.items.push({diam, count, inDuct, note});
+      $("#note").value="";
+      renderTable();
+      compute();
+    }
+    $("#addCable").addEventListener("click", addCable);
+
+    // Core geometry based on MSZ 13207:2020 extracted minima
+    function compute(){
+      // parameters (meters)
+      const side = Math.max(0.10, safeParse(sideClear.value, 0.10)); // >=0.10 m
+      const baseSpacing = Math.max(0.05, safeParse(spacing.value, 0.07)); // >=0.07 m; ducts >=0.05 m
+      const bed = Math.max(0, safeParse(bedding.value, 0.05));
+      const depthSel = Math.max(0.3, safeParse(depthInput.value, 0.7)); // >=0.3 m
+      const layout = layoutSel.value;
+
+      // Terrain rule check for depth
+      const terr = terrain.value;
+      const minDepth = terr === "regulated" ? 0.6 : 1.0;
+      const maxDepthForReg = 0.8;
+      let usedDepth = Math.max(depthSel, minDepth);
+      if(terr==="regulated" && usedDepth<0.6) usedDepth = 0.6;
+
+      // Build horizontal packing width per row
+      // For single & multirow: in each row, place items in series
+      // For trefoil: transform groups of 3 into "one unit" width approx = max(d) (érintve), spacing between groups = baseSpacing
+      let rows = [];
+
+      // Expand items into elements for layout
+      let elements = [];
+      state.items.forEach(it=>{
+        // if in duct -> spacing min may be 0.05, and diameter effectively ~ cable d (outer) + 10 mm assumed jacket slack for duct wall
+        const effDiam = it.inDuct ? (it.diam + 10) : it.diam; // simple outer estimate
+        for(let i=0;i<it.count;i++){ elements.push({d_mm: effDiam, inDuct: it.inDuct}); }
+      });
+
+      if(layout==="trefoil"){
+        // group into triples
+        let groups = [];
+        elements.sort((a,b)=>b.d_mm-a.d_mm);
+        for(let i=0;i<elements.length;i+=3){
+          const g = elements.slice(i,i+3);
+          const maxd = g.length ? Math.max(...g.map(x=>x.d_mm)) : 0;
+          groups.push({d_mm: maxd}); // group footprint ~ max átmérő
+        }
+        // width = sum(group_d + spacing) - spacing + 2*side
+        const groupSpacing = baseSpacing; // between groups
+        let rowWidth_m = groups.length>0 ? (groups.reduce((sum,g)=>sum + toMeters(g.d_mm),0) + (groups.length-1)*groupSpacing) : 0;
+        rows = [{width_m: rowWidth_m, count: groups.length}];
+      } else {
+        // single or multirow: simple greedy rows by keeping diameters as is
+        elements.sort((a,b)=>b.d_mm-a.d_mm);
+        if(layout==="single" || elements.length<=1){
+          const s = elements.length>0 ? (elements.reduce((sum,e)=>sum + toMeters(e.d_mm),0) + (elements.length-1)*baseSpacing) : 0;
+          rows = [{width_m: s, count: elements.length}];
+        } else {
+          // multirow: próbáljuk kiegyenlíteni a sorok szélességét (2 soros bin-pack heuristic)
+          const half = Math.ceil(elements.length/2);
+          const rowA = elements.slice(0, half);
+          const rowB = elements.slice(half);
+          const sumRow = (arr)=> arr.reduce((sum,e)=>sum + toMeters(e.d_mm),0) + (arr.length? (arr.length-1)*baseSpacing : 0);
+          rows = [{width_m: sumRow(rowA), count: rowA.length}, {width_m: sumRow(rowB), count: rowB.length}];
+        }
       }
-      rows.push({ name, diam_mm: diam, qty: qty|0 });
-      document.getElementById('name').value = '';
-      document.getElementById('diam').value = '';
-      document.getElementById('qty').value = 1;
-      renderList();
-    }
 
-    function calc() {
-      if (rows.length === 0) {
-        out.textContent = 'Adj meg legalább egy kábelt.';
-        details.textContent = '';
-        drawViz([]);
-        return;
+      // total width = max(row width) + 2*side ; also enforce min trench width 0.4 m
+      const innerWidth = rows.reduce((m,r)=>Math.max(m, r.width_m), 0);
+      let trenchWidth = Math.max(0.4, innerWidth + 2*side);
+
+      // Depth calc: chosen depth must allow bedding top+bottom; (normatívan: mélység a kábel tetejéig mért; itt a "fektetési mélységet" értelmezzük a kábelköpeny tetejéig)
+      // Jelzőszalag szintje ~ max(kábel teteje) + 0.30 m
+      const topOfCable = usedDepth; // user picks to the cable axis/top? A kalkulátor a kábel TETEJE alatti értéket kezeli fektetési mélységként.
+      const trenchDepth = topOfCable + bed; // plusz felső ágyazóréteg fölött még visszatöltés
+      const tape = topOfCable + 0.30;
+
+      // Output
+      widthOut.textContent = `${round(trenchWidth, 3)} m (min)`;
+      depthOut.textContent = `${round(trenchDepth, 3)} m (becsült árok-mélység)`;
+      tapeLevel.textContent = `– javasolt elhelyezési szint: ${round(tape,2)} m a terepszint alatt`;
+
+      // Status colors
+      const okWidth = trenchWidth >= 0.4 && side >= 0.10;
+      widthOut.className = "pill " + (okWidth? "ok" : "bad");
+
+      // Warn if regulated depth outside 0.6–0.8
+      if(terr==="regulated" && (usedDepth<0.6 || usedDepth>0.8)){
+        depthOut.className = "pill warn";
+      }else if(terr==="unregulated" && usedDepth<1.0){
+        depthOut.className = "pill bad";
+      }else{
+        depthOut.className = "pill ok";
       }
-
-      const sideClear = Math.max(0.10, +document.getElementById('sideClear').value || 0.10); // m
-      const spacing = Math.max(0.07, +document.getElementById('spacing').value || 0.07);     // m
-      const layout = document.getElementById('layout').value;
-
-      // Bontsd ki a kábeleket darabra, hogy egyszerű legyen a sík elrendezés összege
-      let cables_m = [];
-      rows.forEach(r => {
-        const d_m = r.diam_mm / 1000;
-        for (let i=0;i<r.qty;i++) cables_m.push({ name:r.name, d:d_m });
-      });
-
-      // Síkban: összes átmérő + (N-1)*spacing + 2*sideClear
-      const N = cables_m.length;
-      const sumDiam = cables_m.reduce((a,c)=>a+c.d, 0);
-      const insideNeeded = (2*sideClear) + sumDiam + (N>1 ? (N-1)*spacing : 0);
-      const trenchWidth = Math.max(0.40, insideNeeded); // min. 0,40 m
-
-      // Megjelenítés
-      out.innerHTML = `Szükséges kábelárok szélesség: <span class="pill">${(trenchWidth*100).toFixed(1)} cm</span>`;
-      details.innerHTML =
-        `Összes kábel: ${N} db · Össz. átmérő: ${(sumDiam*100).toFixed(1)} cm · Közök: ${(N>1?(N-1)*spacing*100:0).toFixed(1)} cm · ` +
-        `Oldaltartás: ${(2*sideClear*100).toFixed(0)} cm · Elrendezés: ${layout==='flat'?'síkban':''}`;
-
-      drawViz(cables_m, trenchWidth, sideClear, spacing);
     }
 
-    function drawViz(cables, trenchWidth=0.6, side=0.1, spacing=0.07) {
-      // Egyszerű arányosított rajz
-      trenchViz.innerHTML = '<div class="side left">fal</div><div class="side right">fal</div>';
-      const W = trenchViz.clientWidth * 0.90; // belső vizuális szélesség
-      const pxPerM = W / trenchWidth;
-
-      let x = side * pxPerM; // induljunk bal oldali oldaltartástól
-      const bottom = 6;
-
-      cables.forEach((c, idx) => {
-        const r = (c.d/2) * pxPerM;
-        const el = document.createElement('div');
-        el.className = 'cable';
-        el.style.width = (2*r) + 'px';
-        el.style.height = (2*r) + 'px';
-        el.style.left = (x) + 'px';
-        el.style.bottom = bottom + 'px';
-        trenchViz.appendChild(el);
-        x += 2*r + (idx < cables.length-1 ? spacing*pxPerM : 0);
+    // Export as TXT
+    $("#exportBtn").addEventListener("click", ()=>{
+      const lines = [];
+      lines.push("Kábelárok kalkuláció – MSZ 13207:2020");
+      lines.push("");
+      lines.push(`Terep: ${terrain.value==="regulated"?"Szabályozott":"Szabályozatlan"}`);
+      lines.push(`Választott fektetési mélység (kábel teteje): ${round(Math.max(0.3, Number(depthInput.value)||0.7),2)} m`);
+      lines.push(`Elrendezés: ${layoutSel.options[layoutSel.selectedIndex].text}`);
+      lines.push(`Oldaltávolság: ≥ ${round(Math.max(0.10, Number(sideClear.value)||0.10),2)} m (oldalanként)`);
+      lines.push(`Kábel/köteg közti távolság: ≥ ${round(Math.max(0.05, Number(spacing.value)||0.07),2)} m`);
+      lines.push(`Ágyazóréteg (alul/felül): ${round(Math.max(0, Number(bedding.value)||0.05),2)} m`);
+      lines.push("");
+      state.items.forEach((it,i)=>{
+        lines.push(`#${i+1} – d=${it.diam} mm , védőcső: ${it.inDuct?"igen":"nem"}${it.note?(" , megjegyzés: "+it.note):""}`);
       });
-    }
+      lines.push("");
+      lines.push(`Számított árokszélesség (min): ${$("#widthOut").textContent}`);
+      lines.push(`Becsült árok-mélység: ${$("#depthOut").textContent}`);
+      lines.push(`Jelzőszalag szint (min): ${$("#tapeLevel").textContent.replace("– ","")}`);
+      const blob = new Blob([lines.join("\n")], {type:"text/plain"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "kabelarok_kalkulacio.txt";
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+    });
 
-    addBtn.addEventListener('click', addRow);
-    clearBtn.addEventListener('click', ()=>{ rows = []; renderList(); out.textContent='Lista törölve.'; details.textContent=''; });
-    calcBtn.addEventListener('click', calc);
-    renderList();
+    // Reactivity
+    [terrain, depthInput, layoutSel, sideClear, spacing, bedding].forEach(el=>{
+      el.addEventListener("input", compute);
+      el.addEventListener("change", compute);
+    });
+
+    // Initial
+    renderTable(); compute();
   </script>
 </body>
 </html>
