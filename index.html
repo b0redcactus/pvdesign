@@ -95,16 +95,16 @@
 
     <!-- 2) KÁBEL LISTA -->
     <section class="card">
-      <h2>2) Kábelek felvétele</h2>
+      <h2>2) Kábelek / csoportok felvétele</h2>
       <div class="row">
         <div>
-          <label>Kábel külső átmérő (mm)
+          <label id="diamLabel">Kábel külső átmérő (mm)
             <input id="diameter" type="number" step="1" min="1" value="40">
           </label>
         </div>
         <div>
-          <label>Darabszám
-            <input id="count" type="number" step="1" min="1" value="3">
+          <label id="countLabel">Darabszám
+            <input id="count" type="number" step="1" min="1" value="1">
           </label>
         </div>
         <div>
@@ -117,7 +117,7 @@
         </div>
         <div>
           <label>Megjegyzés (opcionális)
-            <input id="note" type="text" placeholder="pl. 3×1C 240 mm² trefoil csoport">
+            <input id="note" type="text" placeholder="pl. 3×1C 240 mm² trefoil">
           </label>
         </div>
         <div><button id="addCable">Felvétel</button></div>
@@ -126,7 +126,7 @@
       <table id="cableTable">
         <thead>
           <tr>
-            <th>#</th><th>Átmérő (mm)</th><th>Darab</th><th>Védőcső</th><th>Megjegyzés</th><th></th>
+            <th>#</th><th>Típus</th><th>Átmérő (mm)</th><th>Darab</th><th>Védőcső</th><th>Megjegyzés</th><th></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -186,11 +186,25 @@
     const depthOut = $("#depthOut");
     const tapeLevel = $("#tapeLevel");
     const svg = $("#schematic");
+    const diamLabel = $("#diamLabel");
+    const countLabel = $("#countLabel");
 
     function mm(v){ return Number(v) || 0 }
     function round(v,dec=2){ const p=Math.pow(10,dec); return Math.round(v*p)/p }
     function toMeters(mmVal){ return (mmVal/1000) }
     function safeParse(v,def=0){ const n=Number(v); return isFinite(n)?n:def }
+
+    // UI: címkék váltása trefoil módban
+    function refreshLabels(){
+      if(layoutSel.value==="trefoil"){
+        diamLabel.firstChild.textContent = "Egy ér (1C) külső átmérő (mm) ";
+        countLabel.firstChild.textContent = "Csoportszám (trefoil db) ";
+      }else{
+        diamLabel.firstChild.textContent = "Kábel külső átmérő (mm) ";
+        countLabel.firstChild.textContent = "Darabszám ";
+      }
+    }
+    layoutSel.addEventListener("change", ()=>{ refreshLabels(); compute(); });
 
     function renderTable(){
       tableBody.innerHTML = "";
@@ -198,6 +212,7 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${idx+1}</td>
+          <td>${it.kind==="trefoilGroup"?"Trefoil-csoport":"Kábel"}</td>
           <td>${it.diam} mm</td>
           <td>${it.count}</td>
           <td>${it.inDuct ? "Igen" : "Nem"}</td>
@@ -216,14 +231,19 @@
       })
     }
 
+    // Felvétel: trefoil esetén a darabszám csoportszám (1 katt = 1 csoport)
     function addCable(){
       const diam = mm($("#diameter").value);
       const count = Math.max(1, Math.floor(safeParse($("#count").value,1)));
       const inDuct = $("#inDuct").value === "yes";
       const note = $("#note").value.trim();
+      if(diam<=0){ alert("Adj meg érvényes átmérőt (mm)!"); return; }
 
-      if(diam<=0){ alert("Adj meg érvényes kábel-átmérőt (mm)!"); return; }
-      state.items.push({diam, count, inDuct, note});
+      if(layoutSel.value==="trefoil"){
+        state.items.push({kind:"trefoilGroup", diam, count, inDuct, note});
+      }else{
+        state.items.push({kind:"singleCable", diam, count, inDuct, note});
+      }
       $("#note").value="";
       renderTable();
       compute();
@@ -241,42 +261,44 @@
       const minDepth = terr === "regulated" ? 0.6 : 1.0;
       const usedDepth = Math.max(depthSel, minDepth);                           // kábel teteje a terepszint alatt
 
-      // elemek (védőcső egyszerűsített +10 mm)
-      let elements = [];
-      state.items.forEach(it=>{
-        const effDiam = it.inDuct ? (it.diam + 10) : it.diam;
-        for(let i=0;i<it.count;i++){ elements.push({d_mm: effDiam}); }
-      });
-
+      // elemek / csoportok listája
       let rows = [];
-      const sToM = (arr)=> arr.reduce((sum,e)=>sum + toMeters(e.d_mm),0);
 
       if(layout==="trefoil"){
-        // 3-as csoportok; csoport vízszintes befoglaló: 2*d
-        elements.sort((a,b)=>b.d_mm-a.d_mm);
-        let groups=[];
-        for(let i=0;i<elements.length;i+=3){
-          const g = elements.slice(i,i+3);
-          if(g.length===0) break;
-          const dmm = Math.max(...g.map(x=>x.d_mm)); // csoport d
-          groups.push({d_m: toMeters(dmm)});
-        }
+        // Közvetlenül csoportokból számolunk: minden tétel count darab 3-as csoport ugyanazzal d-vel
+        let groups = [];
+        state.items.forEach(it=>{
+          const effDmm = it.inDuct ? (it.diam + 10) : it.diam;
+          for(let g=0; g<it.count; g++) groups.push({d_m: toMeters(effDmm)});
+        });
         const width = groups.length ? groups.reduce((s,g)=>s + 2*g.d_m, 0) + (groups.length-1)*baseSpacing : 0;
         rows = [{type:"trefoil", width_m: width, groups}];
       } else if(layout==="multirow"){
-        elements.sort((a,b)=>b.d_mm-a.d_mm);
+        // Expandálás kábelekre
+        let elements = [];
+        state.items.forEach(it=>{
+          const effDmm = it.inDuct ? (it.diam + 10) : it.diam;
+          for(let i=0;i<it.count;i++) elements.push({d_m: toMeters(effDmm)});
+        });
+        elements.sort((a,b)=>b.d_m-a.d_m);
         const half = Math.ceil(elements.length/2);
         const rowA = elements.slice(0, half);
         const rowB = elements.slice(half);
-        const wA = (rowA.length? sToM(rowA) + (rowA.length-1)*baseSpacing : 0);
-        const wB = (rowB.length? sToM(rowB) + (rowB.length-1)*baseSpacing : 0);
+        const wA = (rowA.length? rowA.reduce((s,e)=>s+e.d_m,0) + (rowA.length-1)*baseSpacing : 0);
+        const wB = (rowB.length? rowB.reduce((s,e)=>s+e.d_m,0) + (rowB.length-1)*baseSpacing : 0);
         rows = [
-          {type:"line", width_m:wA, items: rowA.map(e=>({d_m: toMeters(e.d_mm)}))},
-          {type:"line", width_m:wB, items: rowB.map(e=>({d_m: toMeters(e.d_mm)}))}
+          {type:"line", width_m:wA, items: rowA},
+          {type:"line", width_m:wB, items: rowB}
         ];
       } else {
-        const w = (elements.length? sToM(elements) + (elements.length-1)*baseSpacing : 0);
-        rows = [{type:"line", width_m: w, items: elements.map(e=>({d_m: toMeters(e.d_mm)}))}];
+        // single
+        let elements = [];
+        state.items.forEach(it=>{
+          const effDmm = it.inDuct ? (it.diam + 10) : it.diam;
+          for(let i=0;i<it.count;i++) elements.push({d_m: toMeters(effDmm)});
+        });
+        const w = (elements.length? elements.reduce((s,e)=>s+e.d_m,0) + (elements.length-1)*baseSpacing : 0);
+        rows = [{type:"line", width_m: w, items: elements}];
       }
 
       const innerWidth = rows.reduce((m,r)=>Math.max(m, r.width_m), 0);
@@ -304,6 +326,7 @@
 
     // ===== SVG RAJZ =====
     function drawSVG(g){
+      const svg = document.getElementById("schematic");
       const Wpx = 840, Hpx = 380;
       svg.setAttribute("viewBox", `0 0 ${Wpx} ${Hpx}`);
       while(svg.firstChild) svg.removeChild(svg.firstChild);
@@ -312,63 +335,52 @@
       const pxPerM_X = (Wpx - 2*margin) / Math.max(0.8, g.trenchWidth);
       const pxPerM_Y = (Hpx - 2*margin) / Math.max(0.8, g.trenchDepth);
 
-      // FELSZÍN felül! – függőleges tengely: y nő lefelé.
-      const ox = (Wpx - g.trenchWidth * pxPerM_X)/2;      // bal belső
-      const topY = margin;                                 // felszín (y=margin)
+      // Felszín felül
+      const ox = (Wpx - g.trenchWidth * pxPerM_X)/2;
+      const topY = margin;
       const trenchHpx = g.trenchDepth * pxPerM_Y;
       const trenchWpx = g.trenchWidth * pxPerM_X;
 
-      // Árok téglalap (felül a felszín, alul az alj)
+      // Árok téglalap
       svg.appendChild(rectEl(ox, topY, trenchWpx, trenchHpx, "#334a7a", "#99b3ff12"));
+      const tSurf = textEl(ox + trenchWpx/2, topY - 8, "FELSZÍN"); tSurf.setAttribute("text-anchor","middle"); svg.appendChild(tSurf);
 
-      // „Felszín” felirat
-      const tSurf = textEl(ox + trenchWpx/2, topY - 8, "FELSZÍN");
-      tSurf.setAttribute("text-anchor","middle");
-      svg.appendChild(tSurf);
-
-      // Alsó ágyazóréteg jelölése (a fenék felett)
+      // Ágyazóréteg vonal
       if(g.bed>0){
         const yBed = topY + trenchHpx - g.bed*pxPerM_Y;
         svg.appendChild(lineEl(ox, yBed, ox+trenchWpx, yBed, "#5fa8ff99", 2));
-        const t = textEl(ox + trenchWpx - 6, yBed - 4, `Ágyazóréteg (${g.bed.toFixed(2)} m)`);
-        t.setAttribute("text-anchor","end");
-        svg.appendChild(t);
+        const t = textEl(ox + trenchWpx - 6, yBed - 4, `Ágyazóréteg (${g.bed.toFixed(2)} m)`); t.setAttribute("text-anchor","end"); svg.appendChild(t);
       }
 
-      // Kábelek az alján: bázis y (fenéktől felfelé kis vizuális ráhagyás)
+      // Kábelek alul
       const baseY_m = g.bed + 0.02;
       let rowYs = (g.rows.length===1) ? [baseY_m] : [baseY_m, baseY_m + 0.20];
-
-      // vízszintes skála, bal falhoz viszonyítva
       const startX_px = (m)=> ox + m*pxPerM_X;
       const yFromBottom_px = (m)=> topY + trenchHpx - m*pxPerM_Y;
 
       g.rows.forEach((row, rIdx)=>{
         if(row.type==="trefoil"){
-          // csoportok egymás mellett; csoport szélesség = 2*d
           const totalW = row.groups.reduce((s,gp)=>s + 2*gp.d_m, 0) + ((row.groups.length-1)*g.baseSpacing);
           let x0_m = (g.trenchWidth - totalW)/2;
 
-          row.groups.forEach((gp, i)=>{
+          row.groups.forEach((gp)=>{
             const d = gp.d_m, r = d/2;
-            // alsó két kör: középpontok egymástól d-re, y = base + r
-            const yBottom_m = rowYs[rIdx] + r;
-            const cxLeft_m  = x0_m + r;
-            const cxRight_m = x0_m + r + d;
-            // felső kör: középen, d*sqrt(3)/2-vel feljebb
-            const cxTop_m = x0_m + d;
-            const yTop_m = yBottom_m + d*Math.sqrt(3)/2;
+            // alsó két kör
+            const yB_m = rowYs[rIdx] + r;
+            const cxL_m = x0_m + r;
+            const cxR_m = x0_m + r + d;
+            // felső kör: d*sqrt(3)/2 feljebb + pici vizuális emelés (epsilon), hogy ne "csússzon össze"
+            const eps = Math.max(0.005, 0.02*d);      // 2% d vagy min. 5 mm
+            const cxT_m = x0_m + d;
+            const yT_m  = yB_m + d*Math.sqrt(3)/2 + eps;
 
-            // rajz (y lefelé nő, ezért yFromBottom_px)
-            [ [cxLeft_m,yBottom_m], [cxRight_m,yBottom_m], [cxTop_m,yTop_m] ]
-              .forEach(([cx,cy])=>{
-                svg.appendChild(circleEl(startX_px(cx), yFromBottom_px(cy), r*pxPerM_X, "#2a5fff", "#2a5fff55"));
-              });
+            [ [cxL_m,yB_m], [cxR_m,yB_m], [cxT_m,yT_m] ].forEach(([cx,cy])=>{
+              svg.appendChild(circleEl(startX_px(cx), yFromBottom_px(cy), r*pxPerM_X, "#2a5fff", "#2a5fff55"));
+            });
 
             x0_m += 2*d + g.baseSpacing;
           });
         } else {
-          // egysoros sor
           const arr = row.items;
           const rowW = arr.length ? arr.reduce((s,it)=>s+it.d_m,0) + (arr.length-1)*g.baseSpacing : 0;
           let x_m = (g.trenchWidth - rowW)/2;
@@ -383,12 +395,11 @@
         }
       });
 
-      // méretvonalak
-      const wY = topY + trenchHpx + 26;  // szélességjel alul
+      // Méretek
+      const wY = topY + trenchHpx + 26;
       svg.appendChild(dimLine(ox, wY, ox+trenchWpx, wY, `${round(g.trenchWidth,2)} m`));
-      const dX = ox - 34;                // mélység balra
+      const dX = ox - 34;
       svg.appendChild(dimVLine(dX, topY, topY+trenchHpx, `${round(g.trenchDepth,2)} m`));
-      // oldaltávolságok
       const ySide = topY + trenchHpx + 8;
       svg.appendChild(dimLine(ox, ySide, ox + g.side*pxPerM_X, ySide, `${round(g.side,2)} m oldal`));
       svg.appendChild(dimLine(ox+trenchWpx - g.side*pxPerM_X, ySide, ox+trenchWpx, ySide, `${round(g.side,2)} m oldal`));
@@ -453,7 +464,8 @@
       lines.push(`Ágyazóréteg (alul/felül): ${round(Math.max(0, Number(bedding.value)||0.05),2)} m`);
       lines.push("");
       state.items.forEach((it,i)=>{
-        lines.push(`#${i+1} – d=${it.diam} mm , védőcső: ${it.inDuct?"igen":"nem"}${it.note?(" , megjegyzés: "+it.note):""}`);
+        const what = it.kind==="trefoilGroup" ? "trefoil-csoport" : "kábel";
+        lines.push(`#${i+1} – ${what}, d=${it.diam} mm , db=${it.count}, védőcső: ${it.inDuct?"igen":"nem"}${it.note?(" , megjegyzés: "+it.note):""}`);
       });
       lines.push("");
       lines.push(`Számított árokszélesség (min): ${$("#widthOut").textContent}`);
@@ -497,34 +509,30 @@
       ents.push(dxfHeader());
       const W = g.trenchWidth, D = g.trenchDepth;
 
-      // Árok kontúr (origó bal-alsó)
+      // Árok kontúr
       ents.push(dxfLine(0,0, W,0, "TRENCH"));
       ents.push(dxfLine(W,0, W,D, "TRENCH"));
       ents.push(dxfLine(W,D, 0,D, "TRENCH"));
       ents.push(dxfLine(0,D, 0,0, "TRENCH"));
 
-      // Alsó ágyazóréteg vonala
+      // Ágyazóréteg
       if(g.bed>0){ ents.push(dxfLine(0,g.bed, W,g.bed, "BED")); }
 
-      // Kábelek (alul): az SVG-hez hasonlóan – trefoil pontos geometriával
+      // Kábelek (trefoil pontos, single/multi sor alul)
       const baseY = g.bed + 0.02;
       let rowYs = (g.rows.length===1) ? [baseY] : [baseY, baseY + 0.20];
 
       g.rows.forEach((row, rIdx)=>{
         if(row.type==="trefoil"){
           const totalW = row.groups.reduce((s,gp)=>s + 2*gp.d_m, 0) + ((row.groups.length-1)*g.baseSpacing);
-          let x = (W - totalW)/2;              // bal befoglaló
+          let x = (W - totalW)/2;
           row.groups.forEach((gp)=>{
             const d = gp.d_m, r = d/2;
             const yB = rowYs[rIdx] + r;
-            const cxL = x + r;
-            const cxR = x + r + d;
-            const cxT = x + d;
-            const yT  = yB + d*Math.sqrt(3)/2;
-
-            [ [cxL,yB], [cxR,yB], [cxT,yT] ].forEach(([cx,cy])=>{
-              ents.push(dxfCircle(cx, cy, r, "CABLE"));
-            });
+            const cxL = x + r, cxR = x + r + d;
+            const eps = Math.max(0.005, 0.02*d);
+            const cxT = x + d, yT = yB + d*Math.sqrt(3)/2 + eps;
+            [ [cxL,yB], [cxR,yB], [cxT,yT] ].forEach(([cx,cy])=> ents.push(dxfCircle(cx, cy, r, "CABLE")));
             x += 2*d + g.baseSpacing;
           });
         } else {
@@ -540,7 +548,7 @@
         }
       });
 
-      // Méretvonalak (egyszerű)
+      // Méretek
       ents.push(dxfLine(0,-0.10, W,-0.10, "DIM"));
       ents.push(dxfLine(0,-0.12, 0,-0.08, "DIM"));
       ents.push(dxfLine(W,-0.12, W,-0.08, "DIM"));
@@ -550,13 +558,13 @@
       ents.push(dxfLine(-0.12,D, -0.08,D, "DIM"));
       ents.push(dxfText(-0.14, D/2, 0.05, `${round(D,2)} m`, "DIM"));
 
-      // Oldaltávolság jelzések
+      // Oldaltávolság
       ents.push(dxfLine(0,-0.30, g.side, -0.30, "DIM"));
       ents.push(dxfText(g.side/2, -0.34, 0.04, `${round(g.side,2)} m oldal`, "DIM"));
       ents.push(dxfLine(W-g.side, -0.30, W, -0.30, "DIM"));
       ents.push(dxfText(W-g.side/2, -0.34, 0.04, `${round(g.side,2)} m oldal`, "DIM"));
 
-      // Jelzőszalag szint
+      // Jelzőszalag
       const tapeY = g.topOfCable + 0.30;
       ents.push(dxfLine(-0.20, tapeY, W+0.20, tapeY, "TAPE"));
       ents.push(dxfText(W+0.22, tapeY, 0.04, "jelzőszalag +0.30 m", "TAPE"));
@@ -580,7 +588,7 @@
     });
 
     // init
-    function init(){ renderTable(); compute(); }
+    function init(){ refreshLabels(); renderTable(); compute(); }
     init();
   </script>
 </body>
